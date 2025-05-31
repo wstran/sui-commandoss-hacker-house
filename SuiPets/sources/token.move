@@ -14,7 +14,7 @@ module suipets::token {
             9,
             b"SPGT",
             b"SuiPet Game Token",
-            b"Game Token for SuiPets",
+            b"EGame Token for SuiPets",
             option::none(),
             ctx
         );

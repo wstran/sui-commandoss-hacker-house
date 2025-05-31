@@ -206,3 +206,101 @@ Có 3 Sides.
   - Phần Pets sẽ bao gồm tất cả những Pets mà những users khác đã listing để bán. (phần này có thể thêm offer nếu cần)
   - Phần Foods sẽ shows lên những foods đã config ở trên module config.
   - Phần Battle chỉ để cho có để việc mở rộng được xem là còn.
+
+Package ID:
+0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1
+
+Token Treasury Object ID:
+0xf8556af96b48c03ca79e83a1e281a3c4363912836ad55831c6a57a7dd7fd4360
+
+Game Token Object ID:
+0xb0523ae54ffa9184833f82549f28284ad9f4bc4a837d15a622a2800cef376080
+
+Config Object ID:
+0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88
+
+Admin Cap Object ID:
+0x6d2ba9aca47597bdd233d151711c235eb18f2e0f6b861eef7d386b395675de9a
+
+Treasury Object ID:
+0x4f71a27989b56eb2fece1f5a9cdf3a2fd641b13510a8f5fc2cf94f7882939916
+
+
+# add pet to config
+sui client call \
+  --package 0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1 \
+  --module config \
+  --function add_pet \
+  --args 0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
+         0x6d2ba9aca47597bdd233d151711c235eb18f2e0f6b861eef7d386b395675de9a \
+         "Dog" \
+         "Normal" \
+         0 \
+         10 \
+         100 \
+         100 \
+  --gas-budget 100000000
+
+# create random pet to caller
+sui client call \
+  --package 0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1 \
+  --module mechanics \
+  --function create_pet \
+  --args 0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
+         0x4f71a27989b56eb2fece1f5a9cdf3a2fd641b13510a8f5fc2cf94f7882939916 \
+         0x8 \
+         0x6 \
+         0xb586a37c1b3e2ea9ac226a31cd4479ae71ba26e9195ffeea59a6020bfb63271f \
+  --gas-budget 100000000
+
+Pet Object ID: 0x843c827f5168f61e4eee9d383f8616e85447007458dd2bdff31693cd7e653a1f
+
+# add food to config
+sui client call \
+  --package 0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1 \
+  --module config \
+  --function add_food \
+  --args 0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
+         0x6d2ba9aca47597bdd233d151711c235eb18f2e0f6b861eef7d386b395675de9a \
+         "Bone" \
+         "Normal" \
+         1 \
+         1000000000 \
+  --gas-budget 100000000
+
+# buy the food just add by id: 0
+sui client call \
+  --package 0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1 \
+  --module mechanics \
+  --function buy_food \
+  --args 0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
+         0x4f71a27989b56eb2fece1f5a9cdf3a2fd641b13510a8f5fc2cf94f7882939916 \
+         0 \
+         0xd31e38decd995eb815eebe2bbc98a41819a1a912fc2d5e30d377c58faf72f905 \
+  --gas-budget 100000000
+
+Food Object ID: 0x18c2c957cfaf5485944edbc457e0a28037051bb88b2092588ea73bdf4f073785
+
+# Feed Ped
+sui client call \
+  --package 0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1 \
+  --module mechanics \
+  --function feed_pet \
+  --args 0x843c827f5168f61e4eee9d383f8616e85447007458dd2bdff31693cd7e653a1f \
+         0x18c2c957cfaf5485944edbc457e0a28037051bb88b2092588ea73bdf4f073785 \
+         0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
+         0x6 \
+  --gas-budget 100000000
+
+# Claim Rewards
+sui client call \
+  --package 0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1 \
+  --module mechanics \
+  --function claim_pet \
+  --args 0x843c827f5168f61e4eee9d383f8616e85447007458dd2bdff31693cd7e653a1f \
+         0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
+         0xf8556af96b48c03ca79e83a1e281a3c4363912836ad55831c6a57a7dd7fd4360 \
+         0x6 \
+  --gas-budget 100000000
+
+### finished the test
