@@ -1,0 +1,23 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="MvAcquiresCheck" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="MvConstNaming" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="MvExternalLinter" enabled="false" level="ERROR" enabled_by_default="false" />
+    <inspection_tool class="MvFieldInitShorthand" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="MvFunctionNaming" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="MvInvalidModuleDeclaration" enabled="false" level="ERROR" enabled_by_default="false" />
+    <inspection_tool class="MvLocalBindingNaming" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="MvNeedlessDerefRef" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="MvPhantomTypeParameter" enabled="false" level="ERROR" enabled_by_default="false" />
+    <inspection_tool class="MvRedundantTypeCast" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="MvReplaceWithCompoundAssignment" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="MvReplaceWithIndexExpr" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="MvReplaceWithMethodCall" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="MvStructNaming" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="MvTypeCheck" enabled="false" level="ERROR" enabled_by_default="false" />
+    <inspection_tool class="MvUnresolvedReference" enabled="false" level="ERROR" enabled_by_default="false" />
+    <inspection_tool class="MvUnusedImport" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="MvUnusedTestSigner" enabled="false" level="WARNING" enabled_by_default="false" />
+  </profile>
+</component>
