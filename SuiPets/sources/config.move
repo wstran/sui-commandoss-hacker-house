@@ -1,7 +1,4 @@
 module suipets::config {
-    use sui::object::{Self, UID};
-    use sui::transfer;
-    use sui::tx_context::{Self, TxContext};
     use sui::table::{Self, Table};
     use sui::balance::{Self, Balance};
     use sui::sui::SUI;
@@ -9,6 +6,7 @@ module suipets::config {
 
     public struct AdminCap has key {
         id: UID,
+        admin_cap_address: address
     }
 
     public struct Config has key {
@@ -50,14 +48,14 @@ module suipets::config {
     const EInvalidId: u64 = 1;
 
     fun init(ctx: &mut TxContext) {
-        let admin_cap = AdminCap { id: object::new(ctx) };
+        let admin_cap = AdminCap { id: object::new(ctx), admin_cap_address: tx_context::sender(ctx) };
         let config = Config {
             id: object::new(ctx),
             pets: table::new(ctx),
             foods: table::new(ctx),
-            pet_price: 5_000_000_000, // 5 SUI in mist
-            pet_upgrade_base_price: 1_000_000_000, // 1 SUI
-            hungry_secs_per_level: 3600, // 1 hour
+            pet_price: 5_000_000_000,
+            pet_upgrade_base_price: 1_000_000_000,
+            hungry_secs_per_level: 3600,
             earn_per_sec: 100,
             next_pet_id: 0,
             next_food_id: 0,
@@ -71,7 +69,6 @@ module suipets::config {
         transfer::share_object(treasury);
     }
 
-    // Getters for mechanics module
     public fun get_pets(config: &Config): &Table<u64, PetConfig> {
         &config.pets
     }
@@ -120,6 +117,10 @@ module suipets::config {
         pet_config.rate
     }
 
+    public fun get_next_food_id(food_config: &Config): u64 {
+        food_config.next_food_id
+    }
+
     public fun get_food_name(food_config: &FoodConfig): vector<u8> {
         food_config.food_name
     }
@@ -147,7 +148,7 @@ module suipets::config {
         rate: u64,
         ctx: &mut TxContext
     ) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         let pet_id = config.next_pet_id;
         config.next_pet_id = pet_id + 1;
         let pet_config = PetConfig {
@@ -163,42 +164,42 @@ module suipets::config {
     }
 
     public entry fun edit_pet_name(config: &mut Config, cap: &AdminCap, pet_id: u64, new_name: vector<u8>, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         assert!(table::contains(&config.pets, pet_id), EInvalidId);
         let pet = table::borrow_mut(&mut config.pets, pet_id);
         pet.pet_name = new_name;
     }
 
     public entry fun edit_pet_type(config: &mut Config, cap: &AdminCap, pet_id: u64, new_type: vector<u8>, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         assert!(table::contains(&config.pets, pet_id), EInvalidId);
         let pet = table::borrow_mut(&mut config.pets, pet_id);
         pet.pet_type = new_type;
     }
 
     public entry fun edit_pet_max_food_level(config: &mut Config, cap: &AdminCap, pet_id: u64, max_food_level: u64, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         assert!(table::contains(&config.pets, pet_id), EInvalidId);
         let pet = table::borrow_mut(&mut config.pets, pet_id);
         pet.max_food_level = max_food_level;
     }
 
     public entry fun edit_pet_base_earn_level_percent(config: &mut Config, cap: &AdminCap, pet_id: u64, base_earn_level_percent: u256, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         assert!(table::contains(&config.pets, pet_id), EInvalidId);
         let pet = table::borrow_mut(&mut config.pets, pet_id);
         pet.base_earn_level_percent = base_earn_level_percent;
     }
 
     public entry fun edit_pet_rate(config: &mut Config, cap: &AdminCap, pet_id: u64, rate: u64, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         assert!(table::contains(&config.pets, pet_id), EInvalidId);
         let pet = table::borrow_mut(&mut config.pets, pet_id);
         pet.rate = rate;
     }
 
     public entry fun remove_pet(config: &mut Config, cap: &AdminCap, pet_id: u64, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         assert!(table::contains(&config.pets, pet_id), EInvalidId);
         table::remove(&mut config.pets, pet_id);
     }
@@ -212,7 +213,7 @@ module suipets::config {
         food_price: u64,
         ctx: &mut TxContext
     ) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         let food_id = config.next_food_id;
         config.next_food_id = food_id + 1;
         let food_config = FoodConfig {
@@ -226,56 +227,56 @@ module suipets::config {
     }
 
     public entry fun edit_food_name(config: &mut Config, cap: &AdminCap, food_id: u64, new_name: vector<u8>, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         assert!(table::contains(&config.foods, food_id), EInvalidId);
         let food = table::borrow_mut(&mut config.foods, food_id);
         food.food_name = new_name;
     }
 
     public entry fun edit_food_type(config: &mut Config, cap: &AdminCap, food_id: u64, new_type: vector<u8>, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         assert!(table::contains(&config.foods, food_id), EInvalidId);
         let food = table::borrow_mut(&mut config.foods, food_id);
         food.food_type = new_type;
     }
 
     public entry fun edit_food_level(config: &mut Config, cap: &AdminCap, food_id: u64, food_level: u64, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         assert!(table::contains(&config.foods, food_id), EInvalidId);
         let food = table::borrow_mut(&mut config.foods, food_id);
         food.food_level = food_level;
     }
 
     public entry fun edit_food_price(config: &mut Config, cap: &AdminCap, food_id: u64, food_price: u64, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         assert!(table::contains(&config.foods, food_id), EInvalidId);
         let food = table::borrow_mut(&mut config.foods, food_id);
         food.food_price = food_price;
     }
 
     public entry fun remove_food(config: &mut Config, cap: &AdminCap, food_id: u64, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         assert!(table::contains(&config.foods, food_id), EInvalidId);
         table::remove(&mut config.foods, food_id);
     }
 
     public entry fun set_pet_price(config: &mut Config, cap: &AdminCap, pet_price: u256, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         config.pet_price = pet_price;
     }
 
     public entry fun set_pet_upgrade_base_price(config: &mut Config, cap: &AdminCap, pet_upgrade_base_price: u256, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         config.pet_upgrade_base_price = pet_upgrade_base_price;
     }
 
     public entry fun set_hungry_secs_per_level(config: &mut Config, cap: &AdminCap, hungry_secs_per_level: u64, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         config.hungry_secs_per_level = hungry_secs_per_level;
     }
 
     public entry fun set_earn_per_sec(config: &mut Config, cap: &AdminCap, earn_per_sec: u256, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
         config.earn_per_sec = earn_per_sec;
     }
 
@@ -284,9 +285,10 @@ module suipets::config {
         balance::join(&mut treasury.balance, balance);
     }
 
-    public entry fun withdraw(treasury: &mut Treasury, cap: &AdminCap, amount: u64, ctx: &mut TxContext) {
-        assert!(tx_context::sender(ctx) == object::uid_to_address(&cap.id), ENotAdmin);
-        let coin = coin::take(&mut treasury.balance, amount, ctx);
+    public entry fun withdraw(treasury: &mut Treasury, cap: &AdminCap, ctx: &mut TxContext) {
+        assert!(tx_context::sender(ctx) == cap.admin_cap_address, ENotAdmin);
+        let amount = balance::value(&treasury.balance);
+        let coin = coin::from_balance(balance::split(&mut treasury.balance, amount), ctx);
         transfer::public_transfer(coin, tx_context::sender(ctx));
     }
 }
