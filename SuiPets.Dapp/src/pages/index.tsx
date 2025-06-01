@@ -9,25 +9,6 @@ import {
 } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 
-const PACKAGE_ID = "0x78c8a2a8765935c22c545bc3893bf6a8028180cb93016e6e30b9aa7bad376015";
-const CONFIG_ID = "0xe4934b60893e5497657ff36643331c7476a0dd0f59690df5badd9f7031958e4d";
-const TOKEN_TREASURY_ID = "0xc31f83cb69a2eabc3323c4fade4332079b5d789877f21d0e611f55fd82505849";
-const TREASURY_ID = "0xa585bafb72ccc8ac0230190f550f5b3a4ab3a628637e1add2a15594c99626b74";
-const CLOCK_ID = "0x6";
-const RANDOM_ID = "0x8";
-
-// interface Pet {
-//   id: string;
-//   pet_config_id: number;
-//   pet_level: number;
-//   pet_name: string;
-//   pet_type: string;
-//   earned_balance: string;
-//   total_earned_amount: string;
-//   hungry_timestamp_ms: number;
-//   claimed_at_timestamp_ms: number;
-// }
-
 interface Food {
   id: string;
   food_config_id: number;
@@ -37,6 +18,15 @@ interface Food {
   food_price: number;
 }
 
+// Constants and other imports remain the same
+const PACKAGE_ID = "0x78c8a2a8765935c22c545bc3893bf6a8028180cb93016e6e30b9aa7bad376015";
+const CONFIG_ID = "0xe4934b60893e5497657ff36643331c7476a0dd0f59690df5badd9f7031958e4d";
+const TOKEN_TREASURY_ID = "0xc31f83cb69a2eabc3323c4fade4332079b5d789877f21d0e611f55fd82505849";
+const TREASURY_ID = "0xa585bafb72ccc8ac0230190f550f5b3a4ab3a628637e1add2a15594c99626b74";
+const CLOCK_ID = "0x6";
+const RANDOM_ID = "0x8";
+
+// Utility functions (calculateEarnedAmount, getTimeLeft) remain unchanged
 function calculateEarnedAmount(pet: any, earnPerSec: number) {
   const currentTime = Date.now();
   const endTime = Math.min(currentTime, Number(pet.hungry_timestamp_ms));
@@ -44,9 +34,7 @@ function calculateEarnedAmount(pet: any, earnPerSec: number) {
   const timeDiffSec = Math.floor(timeSinceClaim / 1000);
   const earnRate = Number(earnPerSec) + (Number(earnPerSec) * Number(pet.base_earn_level_percent) / 100);
   const earned = timeDiffSec * earnRate + Number(pet.earned_balance);
-
   const amount = Number(earned.toFixed(7));
-
   return amount < 0 ? 0 : amount;
 }
 
@@ -60,6 +48,18 @@ const getTimeLeft = (hungryTimestamp: number) => {
   return `${hours}h ${minutes}m ${seconds}s`;
 };
 
+// Map pet_type to image paths
+const petImages: { [key: string]: string } = {
+  dog: "./assets/pets/dog.png",
+  dragon: "/assets/pets/dragon.png",
+};
+
+// Map food_type to image paths
+const foodImages: { [key: string]: string } = {
+  meat: "/assets/foods/meat.png",
+  fish: "/assets/foods/fish.png",
+};
+
 const HomePage: React.FC = () => {
   const currentAccount = useCurrentAccount();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
@@ -71,7 +71,7 @@ const HomePage: React.FC = () => {
   const [isFeedModalOpen, setIsFeedModalOpen] = useState<boolean>(false);
   const [isBuying, setIsBuying] = useState(false);
 
-  // Owner Pets
+  // Queries and logic remain unchanged
   const { data: ownerPets, refetch: refetchPets } = useSuiClientQuery(
     "getOwnedObjects",
     {
@@ -82,7 +82,6 @@ const HomePage: React.FC = () => {
     { enabled: !!currentAccount?.address }
   );
 
-  // Owner Foods
   const { data: ownedFoods, refetch: refetchFoods } = useSuiClientQuery(
     "getOwnedObjects",
     {
@@ -93,7 +92,6 @@ const HomePage: React.FC = () => {
     { enabled: !!currentAccount?.address }
   );
 
-  // Select Pet
   const { data: selectedPetData, refetch: refetchSelectedPetData } = useSuiClientQuery(
     "getObject",
     {
@@ -105,10 +103,8 @@ const HomePage: React.FC = () => {
     }
   );
 
-  // owned Food Parsed
   const ownedFoodsParsed = useMemo(() => {
     if (!ownedFoods?.data) return [];
-
     return ownedFoods.data
       .map((obj: any, index: number) => {
         const content = obj.data?.content?.fields;
@@ -127,7 +123,6 @@ const HomePage: React.FC = () => {
       .filter((food): food is Food => food !== null);
   }, [ownedFoods]);
 
-  // Config
   const { data: config, isLoading: configLoading, error: configError } = useSuiClientQuery(
     "getObject",
     {
@@ -136,7 +131,6 @@ const HomePage: React.FC = () => {
     }
   );
 
-  // Config Food Dynamic Fields
   const { data: cofigFoodDynamicFields, isLoading: fieldsLoading, error: fieldsError } = useSuiClientQuery(
     "getDynamicFields",
     {
@@ -147,7 +141,6 @@ const HomePage: React.FC = () => {
     }
   );
 
-  // Config Food Dynamic Object Field
   const { data: configFoodDynamicObjectFields, isPending: fieldsPending, isError: fieldsDynamicError } = useSuiClientQueries({
     queries: cofigFoodDynamicFields?.data?.map((field) => ({
       method: "getDynamicFieldObject",
@@ -164,10 +157,8 @@ const HomePage: React.FC = () => {
     }),
   });
 
-  // Config Foods
   const configFoods = useMemo(() => {
     if (!configFoodDynamicObjectFields) return [];
-
     return configFoodDynamicObjectFields.map((field: any, index: number) => {
       const content = field?.data?.content?.fields?.value?.fields;
       if (!content) {
@@ -186,43 +177,31 @@ const HomePage: React.FC = () => {
       .filter((food): food is Food => food !== null);
   }, [configFoodDynamicObjectFields]);
 
-  // Interval Earning Amount
   useEffect(() => {
     if (!ownerPets?.data || !(config?.data?.content as any)?.fields?.earn_per_sec) return;
-
     const earnPerSec = Number((config?.data?.content as any).fields.earn_per_sec) / 1e9;
-
     const updateEarnedTokens = () => {
       const newEarnedTokens: { [petId: string]: number } = {};
-
       ownerPets.data.forEach((obj) => {
         const pet = (obj.data?.content as any).fields;
-
         const earned = calculateEarnedAmount(pet, earnPerSec);
-
         newEarnedTokens[obj.data?.objectId!] = earned;
       });
-
       setEarnedTokens(newEarnedTokens);
     };
-
     updateEarnedTokens();
-
     const interval = setInterval(updateEarnedTokens, 1000);
-
     return () => clearInterval(interval);
   }, [ownerPets, config]);
 
-  // Feed Pet Function
+  // Logic functions (handleFeedPet, handleClaim, handleMintPet, handleBuyFood, handleUpgradePet) remain unchanged
   const handleFeedPet = async (petId: string, foodId: string) => {
     if (!currentAccount) {
       alert("Please connect wallet!");
       return;
     }
-
     try {
       const tx = new Transaction();
-
       tx.moveCall({
         target: `${PACKAGE_ID}::mechanics::feed_pet`,
         arguments: [
@@ -232,7 +211,6 @@ const HomePage: React.FC = () => {
           tx.object(CLOCK_ID),
         ],
       });
-
       signAndExecute(
         {
           transaction: tx,
@@ -257,20 +235,16 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // Claim Function
   const handleClaim = async (petId: string) => {
     if (!currentAccount) {
       alert("Please connect wallet!");
       return;
     }
-
     const tx = new Transaction();
-
     tx.moveCall({
       target: `${PACKAGE_ID}::mechanics::claim_pet`,
       arguments: [tx.object(petId), tx.object(CONFIG_ID), tx.object(TOKEN_TREASURY_ID), tx.object(CLOCK_ID)],
     });
-
     signAndExecute(
       { transaction: tx },
       {
@@ -284,13 +258,11 @@ const HomePage: React.FC = () => {
     );
   };
 
-  // Mint Function
   const handleMintPet = async () => {
     if (!currentAccount) {
       alert("Please connect wallet!");
       return;
     }
-
     try {
       const config = await client.getObject({
         id: CONFIG_ID,
@@ -301,12 +273,10 @@ const HomePage: React.FC = () => {
         return;
       }
       const petPrice = BigInt((config?.data?.content as any).fields.pet_price);
-
       const coins = await client.getCoins({
         owner: currentAccount.address,
         coinType: "0x2::sui::SUI",
       });
-
       const paymentCoin = coins.data.reduce((maxCoin: any, coin: any) => {
         const coinBalance = BigInt(coin.balance);
         if (coinBalance >= petPrice) {
@@ -314,14 +284,11 @@ const HomePage: React.FC = () => {
         }
         return maxCoin;
       }, null);
-
       if (!paymentCoin) {
         alert(`Insufficient SUI balance! Need at least ${petPrice / BigInt(1_000_000_000)} SUI.`);
         return;
       }
-
       const tx = new Transaction();
-
       tx.moveCall({
         target: `${PACKAGE_ID}::mechanics::create_pet`,
         arguments: [
@@ -332,7 +299,6 @@ const HomePage: React.FC = () => {
           tx.splitCoins(tx.object(paymentCoin.coinObjectId), [tx.pure.u64(petPrice)]),
         ],
       });
-
       signAndExecute(
         { transaction: tx },
         {
@@ -348,23 +314,19 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // Buy Food Function
   const handleBuyFood = async (food: Food) => {
     if (!currentAccount) {
       alert("Please connect wallet!");
       return;
     }
-
     setIsBuying(true);
     try {
       const foodPrice = BigInt(Math.floor(food.food_price * 1_000_000_000));
       const estimatedGasFee = BigInt(100_000_000);
-
       const coins = await client.getCoins({
         owner: currentAccount.address,
         coinType: "0x2::sui::SUI",
       });
-
       const paymentCoin = coins.data.reduce((maxCoin: any, coin: any) => {
         const coinBalance = BigInt(coin.balance);
         if (coinBalance >= foodPrice + estimatedGasFee) {
@@ -372,16 +334,12 @@ const HomePage: React.FC = () => {
         }
         return maxCoin;
       }, null);
-
       if (!paymentCoin) {
         alert(`Insufficient SUI balance! Need at least ${(Number(foodPrice) / 1_000_000_000 + 0.1)} SUI in a single coin.`);
         return;
       }
-
       const tx = new Transaction();
-
       const splitCoin = tx.splitCoins(tx.object(paymentCoin.coinObjectId), [tx.pure.u64(foodPrice)]);
-
       tx.moveCall({
         target: `${PACKAGE_ID}::mechanics::buy_food`,
         arguments: [
@@ -391,7 +349,6 @@ const HomePage: React.FC = () => {
           splitCoin,
         ],
       });
-
       signAndExecute(
         { transaction: tx },
         {
@@ -411,13 +368,11 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // Upgrade Pet Function
   const handleUpgradePet = async (petId: string) => {
     if (!currentAccount) {
       alert("Please connect wallet!");
       return;
     }
-
     try {
       const config = await client.getObject({
         id: CONFIG_ID,
@@ -428,7 +383,6 @@ const HomePage: React.FC = () => {
         return;
       }
       const petUpgradeBasePrice = BigInt((config?.data?.content as any).fields.pet_upgrade_base_price);
-
       const petData = await client.getObject({
         id: petId,
         options: { showContent: true },
@@ -438,15 +392,12 @@ const HomePage: React.FC = () => {
         return;
       }
       const petLevel = Number((petData?.data?.content as any).fields.pet_level);
-
       const cost = petUpgradeBasePrice + (petUpgradeBasePrice / BigInt(10) * BigInt(petLevel + 1));
       const estimatedGasFee = BigInt(100_000_000);
-
       const coins = await client.getCoins({
         owner: currentAccount.address,
         coinType: "0x2::sui::SUI",
       });
-
       const paymentCoin = coins.data.reduce((maxCoin: any, coin: any) => {
         const coinBalance = BigInt(coin.balance);
         if (coinBalance >= cost + estimatedGasFee) {
@@ -454,16 +405,12 @@ const HomePage: React.FC = () => {
         }
         return maxCoin;
       }, null);
-
       if (!paymentCoin) {
         alert(`Insufficient SUI balance! Need at least ${(Number(cost) / 1_000_000_000 + 0.1)} SUI in a single coin.`);
         return;
       }
-
       const tx = new Transaction();
-
       const splitCoin = tx.splitCoins(tx.object(paymentCoin.coinObjectId), [tx.pure.u64(cost)]);
-
       tx.moveCall({
         target: `${PACKAGE_ID}::mechanics::upgrade_pet`,
         arguments: [
@@ -473,7 +420,6 @@ const HomePage: React.FC = () => {
           splitCoin,
         ],
       });
-
       signAndExecute(
         { transaction: tx },
         {
@@ -497,15 +443,15 @@ const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900/50 to-teal-900/50 backdrop-blur-xl text-white font-sans">
       {/* Navbar */}
-      <nav className="bg-blue-800/30 backdrop-blur-lg p-4 shadow-lg sticky top-0 z-10 flex justify-between px-40">
-        <div className="container mx-auto flex justify-between items-center">
+      <nav className="bg-blue-800/30 backdrop-blur-lg p-4 shadow-lg sticky top-0 z-10">
+        <div className="container mx-auto flex justify-between items-center px-4 md:px-40">
           <div className="flex space-x-4">
             {["Pets", "Market", "Battle"].map((tab) => (
               <button
                 key={tab}
-                className={`px-5 py-2 rounded-full transition-all duration-300 ${activeTab === tab
-                  ? "bg-blue-600/70 text-white shadow-lg"
-                  : "bg-transparent hover:bg-blue-500/50 text-gray-200"
+                className={`px-5 py-2 rounded-full transition-all duration-300 font-medium ${activeTab === tab
+                    ? "bg-teal-600 text-white shadow-lg"
+                    : "bg-transparent hover:bg-teal-500/50 text-gray-200"
                   } ${tab === "Battle" ? "opacity-50 cursor-not-allowed" : ""}`}
                 onClick={() => tab !== "Battle" && setActiveTab(tab as "Pets" | "Market" | "Battle")}
                 disabled={tab === "Battle"}
@@ -515,31 +461,33 @@ const HomePage: React.FC = () => {
               </button>
             ))}
           </div>
-          <ConnectButton className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-full transition-all duration-300" />
+          <ConnectButton className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-full transition-all duration-300 font-medium" />
         </div>
       </nav>
 
+      {/* Feed Modal */}
       {isFeedModalOpen && selectedPet && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-blue-900/80 backdrop-blur-lg p-6 rounded-xl border border-teal-500/30 shadow-xl w-full max-w-md">
-            <h3 className="text-xl font-bold text-teal-300 mb-4">Select Food to Feed</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-blue-900/90 backdrop-blur-lg p-6 rounded-xl border border-teal-500/30 shadow-2xl w-full max-w-md transform transition-all duration-300 scale-100 hover:scale-105">
+            <h3 className="text-2xl font-bold text-teal-300 mb-6">Select Food to Feed</h3>
             {ownedFoodsParsed.length ? (
-              <div className="space-y-4 max-h-64 overflow-y-auto">
+              <div className="space-y-4 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-teal-500 scrollbar-track-blue-900/50">
                 {ownedFoodsParsed.map((food) => (
                   <div
                     key={food.id}
-                    className="p-4 bg-blue-800/20 rounded-lg border border-teal-600/30 cursor-pointer hover:bg-blue-700/30 transition-all duration-200"
+                    className="p-4 bg-blue-800/30 rounded-lg border border-teal-600/30 cursor-pointer hover:bg-blue-700/40 transition-all duration-200 flex items-center space-x-4"
                     onClick={() => handleFeedPet(selectedPet, food.id)}
                   >
-                    <p className="text-gray-200">
-                      <span className="font-semibold text-teal-200">Name:</span> {food.food_name}
-                    </p>
-                    <p className="text-gray-200">
-                      <span className="font-semibold text-teal-200">Type:</span> {food.food_type}
-                    </p>
-                    <p className="text-gray-200">
-                      <span className="font-semibold text-teal-200">Level:</span> {food.food_level}
-                    </p>
+                    <img
+                      src={foodImages[food.food_name.toLowerCase()] || "/assets/placeholder.png"}
+                      alt={food.food_name}
+                      className="w-16 h-16 object-contain rounded-md"
+                    />
+                    <div>
+                      <p className="text-gray-200 font-semibold">{food.food_name}</p>
+                      <p className="text-gray-300 text-sm">Type: {food.food_type}</p>
+                      <p className="text-gray-300 text-sm">Level: {food.food_level}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -547,7 +495,7 @@ const HomePage: React.FC = () => {
               <p className="text-gray-400">No foods available in your inventory.</p>
             )}
             <button
-              className="mt-4 bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition-all duration-300"
+              className="mt-6 bg-red-600 text-white px-6 py-2 rounded-full hover:bg-red-700 transition-all duration-300 w-full font-medium"
               onClick={() => setIsFeedModalOpen(false)}
             >
               Close
@@ -560,23 +508,31 @@ const HomePage: React.FC = () => {
         {activeTab === "Pets" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-              <h2 className="text-3xl font-bold mb-6 text-teal-300 drop-shadow">Your Pets</h2>
+              <h2 className="text-3xl font-bold mb-6 text-teal-300 drop-shadow-lg">Your Pets</h2>
               {!currentAccount ? (
                 <p className="text-center text-lg text-gray-300">Please connect wallet to view Pets.</p>
               ) : ownerPets?.data.length === 0 ? (
                 <p className="text-gray-400">No pets found. Try minting one!</p>
               ) : (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {ownerPets?.data.map((obj) => {
                     const pet = (obj.data?.content as any).fields;
+                    const petName = pet.pet_name ? Buffer.from(pet.pet_name).toString("utf8").toLowerCase() : "unknown";
                     return (
                       <div
                         key={obj.data?.objectId}
-                        className={`p-5 bg-blue-800/20 backdrop-blur-md rounded-xl cursor-pointer transition-all duration-300 border border-blue-500/30 ${selectedPet === obj.data?.objectId ? "shadow-xl border-teal-400/50" : "hover:shadow-lg"
+                        className={`p-5 bg-blue-800/30 backdrop-blur-md rounded-xl cursor-pointer transition-all duration-300 border border-teal-500/30 ${selectedPet === obj.data?.objectId ? "shadow-xl border-teal-400/50" : "hover:shadow-lg hover:bg-blue-700/40"
                           }`}
                         onClick={() => setSelectedPet(obj.data?.objectId!)}
                       >
-                        <p className="text-lg font-semibold text-teal-200">Name: {pet.pet_name ? Buffer.from(pet.pet_name).toString("utf8") : "Unknown"}</p>
+                        <img
+                          src={petImages[petName] || "/assets/placeholder.png"}
+                          alt={petName}
+                          className="w-32 h-32 object-contain mx-auto mb-4 rounded-md"
+                        />
+                        <p className="text-lg font-semibold text-teal-200">
+                          {pet.pet_name ? Buffer.from(pet.pet_name).toString("utf8").toLowerCase() : "unknown"}
+                        </p>
                         <p className="text-gray-300">Level: {pet.pet_level}</p>
                       </div>
                     );
@@ -586,53 +542,72 @@ const HomePage: React.FC = () => {
             </div>
 
             {selectedPet && selectedPetData && (
-              <div className="p-6 bg-blue-900/20 backdrop-blur-lg rounded-xl border border-teal-500/30 shadow-xl">
-                <h2 className="text-2xl font-bold text-teal-300 mb-4 drop-shadow">Pet Details</h2>
-                <div className="space-y-3 text-gray-200">
-                  <p>
-                    <span className="font-semibold text-teal-200">Name:</span>{" "}
-                    {(selectedPetData.data?.content as any).fields.pet_name
-                      ? Buffer.from((selectedPetData.data?.content as any).fields.pet_name).toString("utf8")
-                      : "Unknown"}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-teal-200">Type:</span>{" "}
-                    {(selectedPetData.data?.content as any).fields.pet_type
-                      ? Buffer.from((selectedPetData.data?.content as any).fields.pet_type).toString("utf8")
-                      : "Unknown"}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-teal-200">Level:</span>{" "}
-                    {(selectedPetData.data?.content as any).fields.pet_level}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-teal-200">Total Earned:</span>{" "}
-                    {((selectedPetData.data?.content as any).fields.total_earned_amount) ? ((selectedPetData.data?.content as any).fields.total_earned_amount) / 1e9 : 0}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-teal-200">Time until hungry:</span>{" "}
-                    {getTimeLeft((selectedPetData.data?.content as any).fields.hungry_timestamp_ms)}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-teal-200">Tokens earning:</span>{" "}
-                    <span className="text-teal-400 font-bold">{earnedTokens[selectedPet]?.toFixed(7) || 0} SPT</span>
-                  </p>
+              <div className="p-6 bg-blue-900/30 backdrop-blur-lg rounded-xl border border-teal-500/30 shadow-xl">
+                <h2 className="text-2xl font-bold text-teal-300 mb-4 drop-shadow-lg">Pet Details</h2>
+                <div className="flex flex-col items-center space-y-4">
+                  <img
+                    src={
+                      petImages[
+                      (selectedPetData.data?.content as any).fields.pet_name
+                        ? Buffer.from((selectedPetData.data?.content as any).fields.pet_name)
+                          .toString("utf8")
+                          .toLowerCase()
+                        : "unknown"
+                      ] || "/assets/placeholder.png"
+                    }
+                    alt="Selected Pet"
+                    className="w-40 h-40 object-contain rounded-md"
+                  />
+                  <div className="space-y-3 text-gray-200 text-center">
+                    <p>
+                      <span className="font-semibold text-teal-200">Name:</span>{" "}
+                      {(selectedPetData.data?.content as any).fields.pet_name
+                        ? Buffer.from((selectedPetData.data?.content as any).fields.pet_name)
+                          .toString("utf8")
+                          .toLowerCase()
+                        : "unknown"}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-teal-200">Type:</span>{" "}
+                      {(selectedPetData.data?.content as any).fields.pet_type
+                        ? Buffer.from((selectedPetData.data?.content as any).fields.pet_type)
+                          .toString("utf8")
+                          .toLowerCase()
+                        : "unknown"}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-teal-200">Level:</span>{" "}
+                      {(selectedPetData.data?.content as any).fields.pet_level}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-teal-200">Total Earned:</span>{" "}
+                      {((selectedPetData.data?.content as any).fields.total_earned_amount) / 1e9 || 0} SPGT
+                    </p>
+                    <p>
+                      <span className="font-semibold text-teal-200">Time until hungry:</span>{" "}
+                      {getTimeLeft((selectedPetData.data?.content as any).fields.hungry_timestamp_ms)}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-teal-200">Tokens earning:</span>{" "}
+                      <span className="text-teal-400 font-bold">{earnedTokens[selectedPet]?.toFixed(7) || 0} SPGT</span>
+                    </p>
+                  </div>
                 </div>
-                <div className="mt-6 flex space-x-4">
+                <div className="mt-6 flex flex-wrap justify-center gap-4">
                   <button
-                    className="bg-teal-600 text-white px-6 py-2 rounded-full hover:bg-teal-700 transition-all duration-300 shadow-md"
+                    className="bg-teal-600 text-white px-6 py-2 rounded-full hover:bg-teal-700 transition-all duration-300 shadow-md font-medium"
                     onClick={() => handleClaim(selectedPet)}
                   >
                     Claim
                   </button>
                   <button
-                    className="bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition-all duration-300 shadow-md"
+                    className="bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition-all duration-300 shadow-md font-medium"
                     onClick={() => setIsFeedModalOpen(true)}
                   >
                     Feed Pet
                   </button>
                   <button
-                    className="bg-purple-600 text-white px-6 py-2 rounded-full hover:bg-purple-700 transition-all duration-300 shadow-md"
+                    className="bg-purple-600 text-white px-6 py-2 rounded-full hover:bg-purple-700 transition-all duration-300 shadow-md font-medium"
                     onClick={() => handleUpgradePet(selectedPet)}
                   >
                     Upgrade
@@ -649,9 +624,9 @@ const HomePage: React.FC = () => {
               {["Foods", "Mint"].map((section) => (
                 <button
                   key={section}
-                  className={`px-5 py-2 rounded-full transition-all duration-300 ${activeMarketSection === section
-                    ? "bg-teal-600 text-white shadow-md"
-                    : "bg-blue-800/20 hover:bg-blue-500/30 text-gray-200 border border-teal-500/30"
+                  className={`px-5 py-2 rounded-full transition-all duration-300 font-medium ${activeMarketSection === section
+                      ? "bg-teal-600 text-white shadow-md"
+                      : "bg-blue-800/30 hover:bg-teal-500/30 text-gray-200 border border-teal-500/30"
                     }`}
                   onClick={() => setActiveMarketSection(section as "Foods" | "Mint")}
                 >
@@ -662,7 +637,7 @@ const HomePage: React.FC = () => {
 
             {activeMarketSection === "Foods" && (
               <div>
-                <h2 className="text-3xl font-bold mb-6 text-teal-600 drop-shadow">Available Foods</h2>
+                <h2 className="text-3xl font-bold mb-6 text-teal-300 drop-shadow-lg">Available Foods</h2>
                 {configLoading || fieldsLoading || fieldsPending ? (
                   <p className="text-gray-400">Loading foods...</p>
                 ) : configError || fieldsError || fieldsDynamicError ? (
@@ -674,22 +649,19 @@ const HomePage: React.FC = () => {
                     {configFoods.map((food: Food) => (
                       <div
                         key={food.id}
-                        className="p-5 bg-blue-800/20 backdrop-blur-md rounded-xl border border-teal-500/30 shadow-md hover:shadow-lg transition-all duration-200"
+                        className="p-5 bg-blue-800/30 backdrop-blur-md rounded-xl border border-teal-500/30 shadow-md hover:shadow-lg hover:bg-blue-700/40 transition-all duration-200"
                       >
-                        <p className="text-gray-200">
-                          <span className="font-semibold text-teal-200">Name:</span> {food.food_name}
-                        </p>
-                        <p className="text-gray-200">
-                          <span className="font-semibold text-teal-200">Type:</span> {food.food_type}
-                        </p>
-                        <p className="text-gray-200">
-                          <span className="font-semibold text-teal-200">Level:</span> {food.food_level}
-                        </p>
-                        <p className="text-gray-200">
-                          <span className="font-semibold text-teal-200">Price:</span> {food.food_price} SUI
-                        </p>
+                        <img
+                          src={foodImages[food.food_name.toLowerCase()] || "/assets/placeholder.png"}
+                          alt={food.food_name}
+                          className="w-24 h-24 object-contain mx-auto mb-4 rounded-md"
+                        />
+                        <p className="text-gray-200 font-semibold">{food.food_name}</p>
+                        <p className="text-gray-300 text-sm">Type: {food.food_type}</p>
+                        <p className="text-gray-300 text-sm">Level: {food.food_level}</p>
+                        <p className="text-gray-300 text-sm">Price: {food.food_price} SUI</p>
                         <button
-                          className="mt-4 bg-green-600 text-white px-4 py-2 rounded-full hover:bg-green-700 transition-all duration-300 shadow-sm"
+                          className="mt-4 bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition-all duration-300 shadow-md w-full font-medium"
                           onClick={() => handleBuyFood(food)}
                           disabled={isBuying}
                         >
@@ -705,10 +677,10 @@ const HomePage: React.FC = () => {
             )}
 
             {activeMarketSection === "Mint" && (
-              <div className="p-6 bg-blue-900/20 backdrop-blur-lg rounded-xl">
-                <h2 className="text-3xl font-bold mb-6 text-teal-300 drop-shadow">Mint New Pet</h2>
+              <div className="p-6 bg-blue-900/30 backdrop-blur-lg rounded-xl border border-teal-500/30 shadow-xl">
+                <h2 className="text-3xl font-bold mb-6 text-teal-300 drop-shadow-lg">Mint New Pet</h2>
                 <button
-                  className="bg-teal-600 text-white px-6 py-2 rounded-full hover:bg-teal-700 transition-all duration-300 shadow-md"
+                  className="bg-teal-600 text-white px-6 py-2 rounded-full hover:bg-teal-700 transition-all duration-300 shadow-md font-medium"
                   onClick={handleMintPet}
                 >
                   Mint Pet ({(config?.data?.content as any)?.fields?.pet_price ? Number((config?.data?.content as any)?.fields?.pet_price) / 1e9 : 'Unknown'} SUI)
@@ -719,8 +691,8 @@ const HomePage: React.FC = () => {
         )}
 
         {activeTab === "Battle" && (
-          <div className="text-center p-6 bg-blue-900/20 backdrop-blur-lg">
-            <h3 className="text-3xl font-bold text-teal-300 drop-shadow">Battle (Coming Soon)</h3>
+          <div className="text-center p-6 bg-blue-900/30 backdrop-blur-lg rounded-xl border border-teal-500/30 shadow-xl">
+            <h3 className="text-3xl font-bold text-teal-300 drop-shadow-lg">Battle (Coming Soon)</h3>
             <p className="text-lg text-gray-400 mt-4">Stay tuned for epic battles!</p>
           </div>
         )}
