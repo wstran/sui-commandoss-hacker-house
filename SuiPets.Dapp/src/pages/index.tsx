@@ -16,17 +16,17 @@ const TREASURY_ID = "0xa585bafb72ccc8ac0230190f550f5b3a4ab3a628637e1add2a15594c9
 const CLOCK_ID = "0x6";
 const RANDOM_ID = "0x8";
 
-interface Pet {
-  id: string;
-  pet_config_id: number;
-  pet_level: number;
-  pet_name: string;
-  pet_type: string;
-  earned_balance: string;
-  total_earned_amount: string;
-  hungry_timestamp_ms: number;
-  claimed_at_timestamp_ms: number;
-}
+// interface Pet {
+//   id: string;
+//   pet_config_id: number;
+//   pet_level: number;
+//   pet_name: string;
+//   pet_type: string;
+//   earned_balance: string;
+//   total_earned_amount: string;
+//   hungry_timestamp_ms: number;
+//   claimed_at_timestamp_ms: number;
+// }
 
 interface Food {
   id: string;
