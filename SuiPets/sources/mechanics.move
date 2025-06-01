@@ -140,9 +140,9 @@ module suipets::mechanics {
             0
         };
         let time_diff_sec = time_since_claim / 1000;
-        let earn_rate = config::get_earn_per_sec(config) + 
-                        (config::get_earn_per_sec(config) * pet.base_earn_level_percent / 100);
-        (time_diff_sec as u256) * earn_rate
+        let earn_rate = config::get_earn_per_sec(config) +  (config::get_earn_per_sec(config) * pet.base_earn_level_percent / 100);
+
+        ((time_diff_sec as u256) * earn_rate) + pet.earned_balance
     }
 
     public entry fun claim_pet(
@@ -153,11 +153,18 @@ module suipets::mechanics {
         ctx: &mut TxContext
     ) {
         let earned = calculate_earned_amount(pet, config, clock);
+
         assert!(earned <= (u64::max_value!() as u256), EAmountTooLarge);
+
         if (earned > 0) {
             let coin = coin::mint(token::get_treasury_cap(token_treasury), (earned as u64), ctx);
+            
             transfer::public_transfer(coin, tx_context::sender(ctx));
+
             pet.claimed_at_timestamp_ms = clock::timestamp_ms(clock);
+
+            pet.earned_balance = 0;
+
             pet.total_earned_amount = pet.total_earned_amount + earned;
         }
     }
@@ -281,31 +288,35 @@ module suipets::mechanics {
         _ctx: &mut TxContext
     ) {
         let current_time = clock::timestamp_ms(clock);
-        if (current_time > pet.hungry_timestamp_ms) {
-            let time_diff_ms = if (pet.hungry_timestamp_ms >= pet.claimed_at_timestamp_ms) {
-                pet.hungry_timestamp_ms - pet.claimed_at_timestamp_ms
-            } else {
-                0
-            };
-            let time_diff_sec = time_diff_ms / 1000;
-            let earn_rate = config::get_earn_per_sec(config) + 
-                        (config::get_earn_per_sec(config) * pet.base_earn_level_percent / 100);
-            let earned = (time_diff_sec as u256) * earn_rate;
 
-            pet.earned_balance = pet.earned_balance + earned;
-            pet.total_earned_amount = pet.total_earned_amount + earned;
-            pet.claimed_at_timestamp_ms = current_time;
-            pet.hungry_timestamp_ms = current_time;
+        let end_time = if (current_time < pet.hungry_timestamp_ms) {
+            current_time
+        } else {
+            pet.hungry_timestamp_ms
         };
+        let time_since_claim = if (end_time > pet.claimed_at_timestamp_ms) {
+            end_time - pet.claimed_at_timestamp_ms
+        } else {
+            0
+        };
+        let time_diff_sec = time_since_claim / 1000;
+        let earn_rate = config::get_earn_per_sec(config) + 
+                        (config::get_earn_per_sec(config) * pet.base_earn_level_percent / 100);
+        let earned = (time_diff_sec as u256) * earn_rate;
+
+        assert!(earned <= (u64::max_value!() as u256), EAmountTooLarge);
+
+        pet.earned_balance = pet.earned_balance + earned;
+        pet.total_earned_amount = pet.total_earned_amount + earned;
 
         let pet_config = table::borrow(config::get_pets(config), pet.pet_config_id);
         let additional_time_ms = config::get_hungry_secs_per_level(config) * 1000 * food.food_level;
-        let max_hungry_time = current_time + (config::get_hungry_secs_per_level(config) * 1000 *  config::get_max_food_level(pet_config));
+        let max_hungry_time = current_time + (config::get_hungry_secs_per_level(config) * 1000 * config::get_max_food_level(pet_config));
 
-        pet.hungry_timestamp_ms = if (pet.hungry_timestamp_ms + additional_time_ms > max_hungry_time) {
+        pet.hungry_timestamp_ms = if (current_time + additional_time_ms > max_hungry_time) {
             max_hungry_time
         } else {
-            pet.hungry_timestamp_ms + additional_time_ms
+            current_time + additional_time_ms
         };
 
         transfer::public_transfer(food, BURN_ADDRESS);

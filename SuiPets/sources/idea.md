@@ -262,7 +262,7 @@ sui client call \
   --function add_food \
   --args 0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
          0x6d2ba9aca47597bdd233d151711c235eb18f2e0f6b861eef7d386b395675de9a \
-         "Bone" \
+         "Meat" \
          "Normal" \
          1 \
          1000000000 \
@@ -275,11 +275,11 @@ sui client call \
   --function buy_food \
   --args 0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
          0x4f71a27989b56eb2fece1f5a9cdf3a2fd641b13510a8f5fc2cf94f7882939916 \
-         0 \
-         0xd31e38decd995eb815eebe2bbc98a41819a1a912fc2d5e30d377c58faf72f905 \
+         1 \
+         0xca876c4c2a865034a0d86510760c9bb771d039dc3dcc212ef386634b72dea3f8 \
   --gas-budget 100000000
 
-Food Object ID: 0x18c2c957cfaf5485944edbc457e0a28037051bb88b2092588ea73bdf4f073785
+Food Object ID: 0xb1858651150eb2258f94a27d978f9a0f3d36a36bcb87f4a0f01fb9e98b70e1c8
 
 # Feed Ped
 sui client call \
@@ -287,7 +287,7 @@ sui client call \
   --module mechanics \
   --function feed_pet \
   --args 0x843c827f5168f61e4eee9d383f8616e85447007458dd2bdff31693cd7e653a1f \
-         0x18c2c957cfaf5485944edbc457e0a28037051bb88b2092588ea73bdf4f073785 \
+         0xb1858651150eb2258f94a27d978f9a0f3d36a36bcb87f4a0f01fb9e98b70e1c8 \
          0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
          0x6 \
   --gas-budget 100000000
@@ -303,4 +303,4 @@ sui client call \
          0x6 \
   --gas-budget 100000000
 
-### finished the test
+### finished the test ###
