@@ -208,60 +208,69 @@ Có 3 Sides.
   - Phần Battle chỉ để cho có để việc mở rộng được xem là còn.
 
 Package ID:
-0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1
+0x78c8a2a8765935c22c545bc3893bf6a8028180cb93016e6e30b9aa7bad376015
 
 Token Treasury Object ID:
-0xf8556af96b48c03ca79e83a1e281a3c4363912836ad55831c6a57a7dd7fd4360
+0xc31f83cb69a2eabc3323c4fade4332079b5d789877f21d0e611f55fd82505849
 
 Game Token Object ID:
-0xb0523ae54ffa9184833f82549f28284ad9f4bc4a837d15a622a2800cef376080
+0xe88c869632ad6dbc5cf5175b8db7146def50edba3055bebbd7120d691c152965
 
 Config Object ID:
-0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88
+0xe4934b60893e5497657ff36643331c7476a0dd0f59690df5badd9f7031958e4d
 
 Admin Cap Object ID:
-0x6d2ba9aca47597bdd233d151711c235eb18f2e0f6b861eef7d386b395675de9a
+0x9578ef0111cfd89355a3aeebd2d2152ee38c6811b34a43819d2cfb81b295b3c5
 
 Treasury Object ID:
-0x4f71a27989b56eb2fece1f5a9cdf3a2fd641b13510a8f5fc2cf94f7882939916
+0xa585bafb72ccc8ac0230190f550f5b3a4ab3a628637e1add2a15594c99626b74
 
+sui client call \
+  --package 0x78c8a2a8765935c22c545bc3893bf6a8028180cb93016e6e30b9aa7bad376015 \
+  --module mechanics \
+  --function buy_food \
+  --args 0xe4934b60893e5497657ff36643331c7476a0dd0f59690df5badd9f7031958e4d \
+         0xa585bafb72ccc8ac0230190f550f5b3a4ab3a628637e1add2a15594c99626b74 \
+         0 \
+         0xfa9b096c26e24bb9a3f8db5994e7428f5551cd80e88f85281cb4c19e9ad1aaca
 
 # add pet to config
+# level: 0
+# max_food_level: 10
+# base_earn_level_percent: 20 # chỉ số tăng dần & theo base level percent
 sui client call \
-  --package 0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1 \
+  --package <ID> \
   --module config \
   --function add_pet \
-  --args 0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
-         0x6d2ba9aca47597bdd233d151711c235eb18f2e0f6b861eef7d386b395675de9a \
+  --args <ID> \
+         <ID> \
          "Dog" \
          "Normal" \
          0 \
          10 \
-         100 \
+         20 \
          100 \
   --gas-budget 100000000
 
 # create random pet to caller
 sui client call \
-  --package 0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1 \
+  --package <ID> \
   --module mechanics \
   --function create_pet \
-  --args 0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
-         0x4f71a27989b56eb2fece1f5a9cdf3a2fd641b13510a8f5fc2cf94f7882939916 \
+  --args <ID> \
+         <ID> \
          0x8 \
          0x6 \
-         0xb586a37c1b3e2ea9ac226a31cd4479ae71ba26e9195ffeea59a6020bfb63271f \
+         <ID> \
   --gas-budget 100000000
-
-Pet Object ID: 0x843c827f5168f61e4eee9d383f8616e85447007458dd2bdff31693cd7e653a1f
 
 # add food to config
 sui client call \
-  --package 0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1 \
+  --package <ID> \
   --module config \
   --function add_food \
-  --args 0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
-         0x6d2ba9aca47597bdd233d151711c235eb18f2e0f6b861eef7d386b395675de9a \
+  --args <ID> \
+         <ID> \
          "Meat" \
          "Normal" \
          1 \
@@ -270,37 +279,94 @@ sui client call \
 
 # buy the food just add by id: 0
 sui client call \
-  --package 0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1 \
+  --package <ID> \
   --module mechanics \
   --function buy_food \
-  --args 0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
-         0x4f71a27989b56eb2fece1f5a9cdf3a2fd641b13510a8f5fc2cf94f7882939916 \
-         1 \
-         0xca876c4c2a865034a0d86510760c9bb771d039dc3dcc212ef386634b72dea3f8 \
+  --args <ID> \
+         <ID> \
+         0 \
+         <ID> \
   --gas-budget 100000000
-
-Food Object ID: 0xb1858651150eb2258f94a27d978f9a0f3d36a36bcb87f4a0f01fb9e98b70e1c8
 
 # Feed Ped
 sui client call \
-  --package 0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1 \
+  --package <ID> \
   --module mechanics \
   --function feed_pet \
-  --args 0x843c827f5168f61e4eee9d383f8616e85447007458dd2bdff31693cd7e653a1f \
-         0xb1858651150eb2258f94a27d978f9a0f3d36a36bcb87f4a0f01fb9e98b70e1c8 \
-         0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
+  --args <ID> \
+         <ID> \
+         <ID> \
          0x6 \
   --gas-budget 100000000
 
 # Claim Rewards
 sui client call \
-  --package 0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1 \
+  --package <ID> \
   --module mechanics \
   --function claim_pet \
-  --args 0x843c827f5168f61e4eee9d383f8616e85447007458dd2bdff31693cd7e653a1f \
-         0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88 \
-         0xf8556af96b48c03ca79e83a1e281a3c4363912836ad55831c6a57a7dd7fd4360 \
+  --args <ID> \
+         <ID> \
+         <ID> \
          0x6 \
   --gas-budget 100000000
 
 ### finished the test ###
+
+
+## start on testnet
+
+# Thêm Pet: Dog (thường)
+sui client call \
+  --package 0x78c8a2a8765935c22c545bc3893bf6a8028180cb93016e6e30b9aa7bad376015 \
+  --module config \
+  --function add_pet \
+  --args 0xe4934b60893e5497657ff36643331c7476a0dd0f59690df5badd9f7031958e4d \
+         0x9578ef0111cfd89355a3aeebd2d2152ee38c6811b34a43819d2cfb81b295b3c5 \
+         "Dog" \
+         "Normal" \
+         0 \
+         10 \
+         50 \
+         100 \
+  --gas-budget 100000000
+
+# Thêm Pet: Dragon (hiếm)
+sui client call \
+  --package 0x78c8a2a8765935c22c545bc3893bf6a8028180cb93016e6e30b9aa7bad376015 \
+  --module config \
+  --function add_pet \
+  --args 0xe4934b60893e5497657ff36643331c7476a0dd0f59690df5badd9f7031958e4d \
+         0x9578ef0111cfd89355a3aeebd2d2152ee38c6811b34a43819d2cfb81b295b3c5 \
+         "Dragon" \
+         "Rare" \
+         0 \
+         15 \
+         100 \
+         50 \
+  --gas-budget 100000000
+
+# Thêm Food: Meat (thường)
+sui client call \
+  --package 0x78c8a2a8765935c22c545bc3893bf6a8028180cb93016e6e30b9aa7bad376015 \
+  --module config \
+  --function add_food \
+  --args 0xe4934b60893e5497657ff36643331c7476a0dd0f59690df5badd9f7031958e4d \
+         0x9578ef0111cfd89355a3aeebd2d2152ee38c6811b34a43819d2cfb81b295b3c5 \
+         "Meat" \
+         "Normal" \
+         1 \
+         500000000 \
+  --gas-budget 100000000
+
+# Thêm Food: Fish (cao cấp)
+sui client call \
+  --package 0x78c8a2a8765935c22c545bc3893bf6a8028180cb93016e6e30b9aa7bad376015 \
+  --module config \
+  --function add_food \
+  --args 0xe4934b60893e5497657ff36643331c7476a0dd0f59690df5badd9f7031958e4d \
+         0x9578ef0111cfd89355a3aeebd2d2152ee38c6811b34a43819d2cfb81b295b3c5 \
+         "Fish" \
+         "Premium" \
+         3 \
+         1500000000 \
+  --gas-budget 100000000

@@ -140,7 +140,7 @@ module suipets::mechanics {
             0
         };
         let time_diff_sec = time_since_claim / 1000;
-        let earn_rate = config::get_earn_per_sec(config) +  (config::get_earn_per_sec(config) * pet.base_earn_level_percent / 100);
+        let earn_rate = config::get_earn_per_sec(config) + (config::get_earn_per_sec(config) * pet.base_earn_level_percent / 100);
 
         ((time_diff_sec as u256) * earn_rate) + pet.earned_balance
     }
@@ -300,23 +300,26 @@ module suipets::mechanics {
             0
         };
         let time_diff_sec = time_since_claim / 1000;
-        let earn_rate = config::get_earn_per_sec(config) + 
-                        (config::get_earn_per_sec(config) * pet.base_earn_level_percent / 100);
-        let earned = (time_diff_sec as u256) * earn_rate;
+
+        let base_earn_rate = config::get_earn_per_sec(config) / 1_000_000_000;
+        let earn_rate = base_earn_rate + (base_earn_rate * pet.base_earn_level_percent / 100);
+        let earned = ((time_diff_sec as u256) * earn_rate) / 1_000_000_000;
 
         assert!(earned <= (u64::max_value!() as u256), EAmountTooLarge);
 
         pet.earned_balance = pet.earned_balance + earned;
         pet.total_earned_amount = pet.total_earned_amount + earned;
+        pet.claimed_at_timestamp_ms = current_time;
 
         let pet_config = table::borrow(config::get_pets(config), pet.pet_config_id);
         let additional_time_ms = config::get_hungry_secs_per_level(config) * 1000 * food.food_level;
         let max_hungry_time = current_time + (config::get_hungry_secs_per_level(config) * 1000 * config::get_max_food_level(pet_config));
 
-        pet.hungry_timestamp_ms = if (current_time + additional_time_ms > max_hungry_time) {
+        let new_hungry_time = pet.hungry_timestamp_ms + additional_time_ms;
+        pet.hungry_timestamp_ms = if (new_hungry_time > max_hungry_time) {
             max_hungry_time
         } else {
-            current_time + additional_time_ms
+            pet.hungry_timestamp_ms + additional_time_ms
         };
 
         transfer::public_transfer(food, BURN_ADDRESS);

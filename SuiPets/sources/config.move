@@ -53,10 +53,10 @@ module suipets::config {
             id: object::new(ctx),
             pets: table::new(ctx),
             foods: table::new(ctx),
-            pet_price: 5_000_000_000,
-            pet_upgrade_base_price: 1_000_000_000,
+            pet_price: 200_000_000,
+            pet_upgrade_base_price: 100_000_000,
             hungry_secs_per_level: 3600,
-            earn_per_sec: 100,
+            earn_per_sec: 100_000,
             next_pet_id: 0,
             next_food_id: 0,
         };

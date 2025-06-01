@@ -5,15 +5,16 @@ import {
   useSuiClientQuery,
   useSignAndExecuteTransaction,
   useSuiClientQueries,
+  useSuiClient,
 } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 
-const PACKAGE_ID = "0xafa475ec90d2eacab95035ebb39624c709b9810000357a78969a6065addf92b1";
-const CONFIG_ID = "0x8cd2f48ec5f59cccbfae2a72be0c53b3555324ff9a8ce6f72865904d4bd3fa88";
-const TOKEN_TREASURY_ID = "0xf8556af96b48c03ca79e83a1e281a3c4363912836ad55831c6a57a7dd7fd4360";
-const TREASURY_ID = "0x4f71a27989b56eb2fece1f5a9cdf3a2fd641b13510a8f5fc2cf94f7882939916";
+const PACKAGE_ID = "0x78c8a2a8765935c22c545bc3893bf6a8028180cb93016e6e30b9aa7bad376015";
+const CONFIG_ID = "0xe4934b60893e5497657ff36643331c7476a0dd0f59690df5badd9f7031958e4d";
+const TOKEN_TREASURY_ID = "0xc31f83cb69a2eabc3323c4fade4332079b5d789877f21d0e611f55fd82505849";
+const TREASURY_ID = "0xa585bafb72ccc8ac0230190f550f5b3a4ab3a628637e1add2a15594c99626b74";
 const CLOCK_ID = "0x6";
-const RANDOM_ID = "0x1";
+const RANDOM_ID = "0x8";
 
 interface Pet {
   id: string;
@@ -62,11 +63,13 @@ const getTimeLeft = (hungryTimestamp: number) => {
 const HomePage: React.FC = () => {
   const currentAccount = useCurrentAccount();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
+  const client = useSuiClient();
   const [activeTab, setActiveTab] = useState<"Pets" | "Market" | "Battle">("Pets");
   const [activeMarketSection, setActiveMarketSection] = useState<"Foods" | "Mint">("Foods");
   const [selectedPet, setSelectedPet] = useState<string | null>(null);
   const [earnedTokens, setEarnedTokens] = useState<{ [petId: string]: number }>({});
   const [isFeedModalOpen, setIsFeedModalOpen] = useState<boolean>(false);
+  const [isBuying, setIsBuying] = useState(false);
 
   // Owner Pets
   const { data: ownerPets, refetch: refetchPets } = useSuiClientQuery(
@@ -161,7 +164,7 @@ const HomePage: React.FC = () => {
     }),
   });
 
-  // Confg Foods
+  // Config Foods
   const configFoods = useMemo(() => {
     if (!configFoodDynamicObjectFields) return [];
 
@@ -219,7 +222,6 @@ const HomePage: React.FC = () => {
 
     try {
       const tx = new Transaction();
-      console.log("Feeding Pet:", { petId, foodId, CONFIG_ID, CLOCK_ID });
 
       tx.moveCall({
         target: `${PACKAGE_ID}::mechanics::feed_pet`,
@@ -289,37 +291,213 @@ const HomePage: React.FC = () => {
       return;
     }
 
-    const tx = new Transaction();
-
-    tx.moveCall({
-      target: `${PACKAGE_ID}::mechanics::create_pet`,
-      arguments: [
-        tx.object(CONFIG_ID),
-        tx.object(TREASURY_ID),
-        tx.object(RANDOM_ID),
-        tx.object(CLOCK_ID),
-        tx.splitCoins(tx.gas, [tx.pure("u256", 5000000000)]),
-      ],
-    });
-
-    signAndExecute(
-      { transaction: tx },
-      {
-        onSuccess: () => {
-          alert("Pet minted successfully!");
-          refetchPets();
-        },
-        onError: (error) => alert(`Mint Error: ${error.message}`),
+    try {
+      const config = await client.getObject({
+        id: CONFIG_ID,
+        options: { showContent: true },
+      });
+      if (!(config?.data?.content as any)?.fields?.pet_price) {
+        alert("Failed to fetch pet_price from Config!");
+        return;
       }
-    );
+      const petPrice = BigInt((config?.data?.content as any).fields.pet_price);
+
+      const coins = await client.getCoins({
+        owner: currentAccount.address,
+        coinType: "0x2::sui::SUI",
+      });
+
+      const paymentCoin = coins.data.reduce((maxCoin: any, coin: any) => {
+        const coinBalance = BigInt(coin.balance);
+        if (coinBalance >= petPrice) {
+          return !maxCoin || coinBalance > BigInt(maxCoin.balance) ? coin : maxCoin;
+        }
+        return maxCoin;
+      }, null);
+
+      if (!paymentCoin) {
+        alert(`Insufficient SUI balance! Need at least ${petPrice / BigInt(1_000_000_000)} SUI.`);
+        return;
+      }
+
+      const tx = new Transaction();
+
+      tx.moveCall({
+        target: `${PACKAGE_ID}::mechanics::create_pet`,
+        arguments: [
+          tx.object(CONFIG_ID),
+          tx.object(TREASURY_ID),
+          tx.object(RANDOM_ID),
+          tx.object(CLOCK_ID),
+          tx.splitCoins(tx.object(paymentCoin.coinObjectId), [tx.pure.u64(petPrice)]),
+        ],
+      });
+
+      signAndExecute(
+        { transaction: tx },
+        {
+          onSuccess: () => {
+            alert("Pet minted successfully!");
+            refetchPets();
+          },
+          onError: (error) => alert(`Mint Error: ${error.message}`),
+        }
+      );
+    } catch (error: any) {
+      alert(`Error: ${error.message}`);
+    }
   };
 
-  console.log(ownedFoods)
+  // Buy Food Function
+  const handleBuyFood = async (food: Food) => {
+    if (!currentAccount) {
+      alert("Please connect wallet!");
+      return;
+    }
+
+    setIsBuying(true);
+    try {
+      const foodPrice = BigInt(Math.floor(food.food_price * 1_000_000_000));
+      const estimatedGasFee = BigInt(100_000_000);
+
+      const coins = await client.getCoins({
+        owner: currentAccount.address,
+        coinType: "0x2::sui::SUI",
+      });
+
+      const paymentCoin = coins.data.reduce((maxCoin: any, coin: any) => {
+        const coinBalance = BigInt(coin.balance);
+        if (coinBalance >= foodPrice + estimatedGasFee) {
+          return !maxCoin || coinBalance > BigInt(maxCoin.balance) ? coin : maxCoin;
+        }
+        return maxCoin;
+      }, null);
+
+      if (!paymentCoin) {
+        alert(`Insufficient SUI balance! Need at least ${(Number(foodPrice) / 1_000_000_000 + 0.1)} SUI in a single coin.`);
+        return;
+      }
+
+      const tx = new Transaction();
+
+      const splitCoin = tx.splitCoins(tx.object(paymentCoin.coinObjectId), [tx.pure.u64(foodPrice)]);
+
+      tx.moveCall({
+        target: `${PACKAGE_ID}::mechanics::buy_food`,
+        arguments: [
+          tx.object(CONFIG_ID),
+          tx.object(TREASURY_ID),
+          tx.pure.u64(food.food_config_id),
+          splitCoin,
+        ],
+      });
+
+      signAndExecute(
+        { transaction: tx },
+        {
+          onSuccess: () => {
+            alert(`Successfully bought ${food.food_name}!`);
+            refetchFoods();
+          },
+          onError: (error) => {
+            alert(`Buy Food Error: ${error.message}`);
+          },
+        }
+      );
+    } catch (error: any) {
+      alert(`Buy Food Setup Error: ${error.message}`);
+    } finally {
+      setIsBuying(false);
+    }
+  };
+
+  // Upgrade Pet Function
+  const handleUpgradePet = async (petId: string) => {
+    if (!currentAccount) {
+      alert("Please connect wallet!");
+      return;
+    }
+
+    try {
+      const config = await client.getObject({
+        id: CONFIG_ID,
+        options: { showContent: true },
+      });
+      if (!(config?.data?.content as any)?.fields?.pet_upgrade_base_price) {
+        alert("Failed to fetch pet_upgrade_base_price from Config!");
+        return;
+      }
+      const petUpgradeBasePrice = BigInt((config?.data?.content as any).fields.pet_upgrade_base_price);
+
+      const petData = await client.getObject({
+        id: petId,
+        options: { showContent: true },
+      });
+      if (!(petData?.data?.content as any)?.fields?.pet_level) {
+        alert("Failed to fetch pet_level from Pet!");
+        return;
+      }
+      const petLevel = Number((petData?.data?.content as any).fields.pet_level);
+
+      const cost = petUpgradeBasePrice + (petUpgradeBasePrice / BigInt(10) * BigInt(petLevel + 1));
+      const estimatedGasFee = BigInt(100_000_000);
+
+      const coins = await client.getCoins({
+        owner: currentAccount.address,
+        coinType: "0x2::sui::SUI",
+      });
+
+      const paymentCoin = coins.data.reduce((maxCoin: any, coin: any) => {
+        const coinBalance = BigInt(coin.balance);
+        if (coinBalance >= cost + estimatedGasFee) {
+          return !maxCoin || coinBalance > BigInt(maxCoin.balance) ? coin : maxCoin;
+        }
+        return maxCoin;
+      }, null);
+
+      if (!paymentCoin) {
+        alert(`Insufficient SUI balance! Need at least ${(Number(cost) / 1_000_000_000 + 0.1)} SUI in a single coin.`);
+        return;
+      }
+
+      const tx = new Transaction();
+
+      const splitCoin = tx.splitCoins(tx.object(paymentCoin.coinObjectId), [tx.pure.u64(cost)]);
+
+      tx.moveCall({
+        target: `${PACKAGE_ID}::mechanics::upgrade_pet`,
+        arguments: [
+          tx.object(petId),
+          tx.object(CONFIG_ID),
+          tx.object(TREASURY_ID),
+          splitCoin,
+        ],
+      });
+
+      signAndExecute(
+        { transaction: tx },
+        {
+          onSuccess: () => {
+            alert("Pet upgraded successfully!");
+            refetchPets();
+            refetchSelectedPetData();
+          },
+          onError: (error) => {
+            console.error("Upgrade Error:", error);
+            alert(`Upgrade Error: ${error.message}`);
+          },
+        }
+      );
+    } catch (error: any) {
+      console.error("Upgrade Setup Error:", error);
+      alert(`Upgrade Setup Error: ${error.message}`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900/50 to-teal-900/50 backdrop-blur-xl text-white font-sans">
       {/* Navbar */}
-      <nav className="bg-blue-800/30 backdrop-blur-lg p-4 shadow-lg sticky top-0 z-10">
+      <nav className="bg-blue-800/30 backdrop-blur-lg p-4 shadow-lg sticky top-0 z-10 flex justify-between px-40">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex space-x-4">
             {["Pets", "Market", "Battle"].map((tab) => (
@@ -429,7 +607,7 @@ const HomePage: React.FC = () => {
                   </p>
                   <p>
                     <span className="font-semibold text-teal-200">Total Earned:</span>{" "}
-                    {(selectedPetData.data?.content as any).fields.total_earned_amount}
+                    {((selectedPetData.data?.content as any).fields.total_earned_amount) ? ((selectedPetData.data?.content as any).fields.total_earned_amount) / 1e9 : 0}
                   </p>
                   <p>
                     <span className="font-semibold text-teal-200">Time until hungry:</span>{" "}
@@ -452,6 +630,12 @@ const HomePage: React.FC = () => {
                     onClick={() => setIsFeedModalOpen(true)}
                   >
                     Feed Pet
+                  </button>
+                  <button
+                    className="bg-purple-600 text-white px-6 py-2 rounded-full hover:bg-purple-700 transition-all duration-300 shadow-md"
+                    onClick={() => handleUpgradePet(selectedPet)}
+                  >
+                    Upgrade
                   </button>
                 </div>
               </div>
@@ -506,9 +690,10 @@ const HomePage: React.FC = () => {
                         </p>
                         <button
                           className="mt-4 bg-green-600 text-white px-4 py-2 rounded-full hover:bg-green-700 transition-all duration-300 shadow-sm"
-                          onClick={() => alert(`Buy food ${food.food_name} (not implemented)`)}
+                          onClick={() => handleBuyFood(food)}
+                          disabled={isBuying}
                         >
-                          Buy
+                          {isBuying ? "Buying..." : "Buy"}
                         </button>
                       </div>
                     ))}
@@ -526,7 +711,7 @@ const HomePage: React.FC = () => {
                   className="bg-teal-600 text-white px-6 py-2 rounded-full hover:bg-teal-700 transition-all duration-300 shadow-md"
                   onClick={handleMintPet}
                 >
-                  Mint Pet (5 SUI)
+                  Mint Pet ({(config?.data?.content as any)?.fields?.pet_price ? Number((config?.data?.content as any)?.fields?.pet_price) / 1e9 : 'Unknown'} SUI)
                 </button>
               </div>
             )}
