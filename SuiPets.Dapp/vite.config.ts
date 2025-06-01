@@ -1,10 +1,12 @@
 import { defineConfig } from 'vite';
 import react from "@vitejs/plugin-react-swc";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
+// @ts-ignore
+import tailwindcss from '@tailwindcss/vite';
 import path from "path";
 
 export default defineConfig({
-  plugins: [react(), nodePolyfills()],
+  plugins: [react(), nodePolyfills(), tailwindcss()],
   server: {
     port: Number(process.env.PORT) || 3000,
     cors: true,

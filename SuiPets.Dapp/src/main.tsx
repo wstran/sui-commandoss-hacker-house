@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import App from './App';
 
+import '@/main.css';
 import '@mysten/dapp-kit/dist/index.css';
 
 const queryClient = new QueryClient();
@@ -19,8 +20,8 @@ const { networkConfig } = createNetworkConfig({
 createRoot(document.getElementById('root')!).render(
 	<React.StrictMode>
 		<QueryClientProvider client={queryClient}>
-			<SuiClientProvider networks={networkConfig} defaultNetwork={import.meta.env.VITE_CURRENT_NETWORK || 'devnet'}>
-				<WalletProvider autoConnect storageKey="random(...)">
+			<SuiClientProvider networks={networkConfig} network={import.meta.env.VITE_CURRENT_NETWORK || 'devnet'} defaultNetwork={import.meta.env.VITE_CURRENT_NETWORK || 'devnet'}>
+				<WalletProvider autoConnect storageKey="suipets">
 					<App />
 				</WalletProvider>
 			</SuiClientProvider>
