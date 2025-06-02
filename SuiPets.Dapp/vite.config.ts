@@ -8,8 +8,11 @@ import path from "path";
 export default defineConfig({
   plugins: [react(), nodePolyfills(), tailwindcss()],
   server: {
-    port: Number(process.env.PORT) || 3000,
-    cors: true,
+    port: 3000,
+    cors: true
+  },
+  preview: {
+    allowedHosts: ['suiwallet.app'],
   },
   resolve: {
     alias: {

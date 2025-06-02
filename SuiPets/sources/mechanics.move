@@ -315,11 +315,17 @@ module suipets::mechanics {
         let additional_time_ms = config::get_hungry_secs_per_level(config) * 1000 * food.food_level;
         let max_hungry_time = current_time + (config::get_hungry_secs_per_level(config) * 1000 * config::get_max_food_level(pet_config));
 
-        let new_hungry_time = pet.hungry_timestamp_ms + additional_time_ms;
+        let base_time = if (current_time > pet.hungry_timestamp_ms) {
+            current_time
+        } else {
+            pet.hungry_timestamp_ms
+        };
+        let new_hungry_time = base_time + additional_time_ms;
+
         pet.hungry_timestamp_ms = if (new_hungry_time > max_hungry_time) {
             max_hungry_time
         } else {
-            pet.hungry_timestamp_ms + additional_time_ms
+            new_hungry_time
         };
 
         transfer::public_transfer(food, BURN_ADDRESS);

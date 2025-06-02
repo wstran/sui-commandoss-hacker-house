@@ -35,7 +35,7 @@ module suipets::config {
         base_earn_level_percent: u256,
         rate: u64,
     }
-
+    
     public struct FoodConfig has store, drop {
         id: u64,
         food_name: vector<u8>,
