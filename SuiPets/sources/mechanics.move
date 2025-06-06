@@ -142,7 +142,7 @@ module suipets::mechanics {
         let time_diff_sec = time_since_claim / 1000;
         let earn_rate = config::get_earn_per_sec(config) + (config::get_earn_per_sec(config) * pet.base_earn_level_percent / 100);
 
-        ((time_diff_sec as u256) * earn_rate) + pet.earned_balance
+        ((time_diff_sec as u256) * earn_rate)
     }
 
     public entry fun claim_pet(
@@ -152,7 +152,7 @@ module suipets::mechanics {
         clock: &Clock,
         ctx: &mut TxContext
     ) {
-        let earned = calculate_earned_amount(pet, config, clock);
+        let earned = calculate_earned_amount(pet, config, clock) + pet.earned_balance;
 
         assert!(earned <= (u64::max_value!() as u256), EAmountTooLarge);
 
@@ -288,27 +288,14 @@ module suipets::mechanics {
         _ctx: &mut TxContext
     ) {
         let current_time = clock::timestamp_ms(clock);
-
-        let end_time = if (current_time < pet.hungry_timestamp_ms) {
-            current_time
-        } else {
-            pet.hungry_timestamp_ms
-        };
-        let time_since_claim = if (end_time > pet.claimed_at_timestamp_ms) {
-            end_time - pet.claimed_at_timestamp_ms
-        } else {
-            0
-        };
-        let time_diff_sec = time_since_claim / 1000;
-
-        let base_earn_rate = config::get_earn_per_sec(config) / 1_000_000_000;
-        let earn_rate = base_earn_rate + (base_earn_rate * pet.base_earn_level_percent / 100);
-        let earned = ((time_diff_sec as u256) * earn_rate) / 1_000_000_000;
+        let earned = calculate_earned_amount(pet, config, clock);
 
         assert!(earned <= (u64::max_value!() as u256), EAmountTooLarge);
 
-        pet.earned_balance = pet.earned_balance + earned;
-        pet.total_earned_amount = pet.total_earned_amount + earned;
+        if (earned > 0) {
+            pet.earned_balance = pet.earned_balance + earned;
+        };
+
         pet.claimed_at_timestamp_ms = current_time;
 
         let pet_config = table::borrow(config::get_pets(config), pet.pet_config_id);
@@ -320,6 +307,7 @@ module suipets::mechanics {
         } else {
             pet.hungry_timestamp_ms
         };
+
         let new_hungry_time = base_time + additional_time_ms;
 
         pet.hungry_timestamp_ms = if (new_hungry_time > max_hungry_time) {

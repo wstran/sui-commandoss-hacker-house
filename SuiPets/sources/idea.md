@@ -208,29 +208,29 @@ Có 3 Sides.
   - Phần Battle chỉ để cho có để việc mở rộng được xem là còn.
 
 Package ID:
-0xc13e40e4d7cad756d130884cdfcb34f7ccef0e3712b99166010b48bd2b54b068
+0x996d18738dbad3be88f1482e6fb551b6a27144dd86b3e0fa0d7d8b226c65905a
 
 Token Treasury Object ID:
-0x131a964ac291a39f09392fb624be669e019ff3b84c518b3d5e4e76938ef9080f
+0xf1a030f2e1f688dcd0ac22f82afd52c491f937dfb83e7d0ff8ec534b0f1b4566
 
 Game Token Object ID:
-0x6678cb4bdfa410ae985ba84d928d58e50c1fef919af8c637f79a02a28c68002c
+0x3c7c1f1889b48025dda5f5f4cec864f2d6bba8a948c6a735668916ba77898984
 
 Config Object ID:
-0x6dd53e5776c0f9b22951f451fc7effc3eed8907f9c0ea252e5092c55d6cda99a
+0xa655f7e35790589cd924b25ce9c370506e30e066c59db051606058f1b6de848e
 
 Admin Cap Object ID:
-0xcc366e3aed80f713f2c4782071f492df0e02e55779c5fd39fb0b6638ac6e15ed
+0x760a7725e559174c5cc9a94d06794d39c8fd991ba7b2c6c9a3063722938f5d25
 
 Treasury Object ID:
-0xbe078330aefaacbab3e6f1e786c0e24c76180a118b7862b1d012065b3e68d4cd
+0xe50db93b0fc08787bbc64bbf7403f4754e843c64a52b95c7bf99dd3750e6b686
 
 sui client call \
-  --package 0xc13e40e4d7cad756d130884cdfcb34f7ccef0e3712b99166010b48bd2b54b068 \
+  --package 0x996d18738dbad3be88f1482e6fb551b6a27144dd86b3e0fa0d7d8b226c65905a \
   --module mechanics \
   --function buy_food \
-  --args 0x6dd53e5776c0f9b22951f451fc7effc3eed8907f9c0ea252e5092c55d6cda99a \
-         0xbe078330aefaacbab3e6f1e786c0e24c76180a118b7862b1d012065b3e68d4cd \
+  --args 0xa655f7e35790589cd924b25ce9c370506e30e066c59db051606058f1b6de848e \
+         0xe50db93b0fc08787bbc64bbf7403f4754e843c64a52b95c7bf99dd3750e6b686 \
          0 \
          0xfa9b096c26e24bb9a3f8db5994e7428f5551cd80e88f85281cb4c19e9ad1aaca
 
@@ -317,11 +317,11 @@ sui client call \
 
 # Thêm Pet: Dog (thường)
 sui client call \
-  --package 0xc13e40e4d7cad756d130884cdfcb34f7ccef0e3712b99166010b48bd2b54b068 \
+  --package 0x996d18738dbad3be88f1482e6fb551b6a27144dd86b3e0fa0d7d8b226c65905a \
   --module config \
   --function add_pet \
-  --args 0x6dd53e5776c0f9b22951f451fc7effc3eed8907f9c0ea252e5092c55d6cda99a \
-         0xcc366e3aed80f713f2c4782071f492df0e02e55779c5fd39fb0b6638ac6e15ed \
+  --args 0xa655f7e35790589cd924b25ce9c370506e30e066c59db051606058f1b6de848e \
+         0x760a7725e559174c5cc9a94d06794d39c8fd991ba7b2c6c9a3063722938f5d25 \
          "Dog" \
          "Normal" \
          0 \
@@ -332,11 +332,11 @@ sui client call \
 
 # Thêm Pet: Dragon (hiếm)
 sui client call \
-  --package 0xc13e40e4d7cad756d130884cdfcb34f7ccef0e3712b99166010b48bd2b54b068 \
+  --package 0x996d18738dbad3be88f1482e6fb551b6a27144dd86b3e0fa0d7d8b226c65905a \
   --module config \
   --function add_pet \
-  --args 0x6dd53e5776c0f9b22951f451fc7effc3eed8907f9c0ea252e5092c55d6cda99a \
-         0xcc366e3aed80f713f2c4782071f492df0e02e55779c5fd39fb0b6638ac6e15ed \
+  --args 0xa655f7e35790589cd924b25ce9c370506e30e066c59db051606058f1b6de848e \
+         0x760a7725e559174c5cc9a94d06794d39c8fd991ba7b2c6c9a3063722938f5d25 \
          "Dragon" \
          "Rare" \
          0 \
@@ -347,11 +347,11 @@ sui client call \
 
 # Thêm Food: Meat (thường)
 sui client call \
-  --package 0xc13e40e4d7cad756d130884cdfcb34f7ccef0e3712b99166010b48bd2b54b068 \
+  --package 0x996d18738dbad3be88f1482e6fb551b6a27144dd86b3e0fa0d7d8b226c65905a \
   --module config \
   --function add_food \
-  --args 0x6dd53e5776c0f9b22951f451fc7effc3eed8907f9c0ea252e5092c55d6cda99a \
-         0xcc366e3aed80f713f2c4782071f492df0e02e55779c5fd39fb0b6638ac6e15ed \
+  --args 0xa655f7e35790589cd924b25ce9c370506e30e066c59db051606058f1b6de848e \
+         0x760a7725e559174c5cc9a94d06794d39c8fd991ba7b2c6c9a3063722938f5d25 \
          "Meat" \
          "Normal" \
          1 \
@@ -360,11 +360,11 @@ sui client call \
 
 # Thêm Food: Fish (cao cấp)
 sui client call \
-  --package 0xc13e40e4d7cad756d130884cdfcb34f7ccef0e3712b99166010b48bd2b54b068 \
+  --package 0x996d18738dbad3be88f1482e6fb551b6a27144dd86b3e0fa0d7d8b226c65905a \
   --module config \
   --function add_food \
-  --args 0x6dd53e5776c0f9b22951f451fc7effc3eed8907f9c0ea252e5092c55d6cda99a \
-         0xcc366e3aed80f713f2c4782071f492df0e02e55779c5fd39fb0b6638ac6e15ed \
+  --args 0xa655f7e35790589cd924b25ce9c370506e30e066c59db051606058f1b6de848e \
+         0x760a7725e559174c5cc9a94d06794d39c8fd991ba7b2c6c9a3063722938f5d25 \
          "Fish" \
          "Premium" \
          3 \
