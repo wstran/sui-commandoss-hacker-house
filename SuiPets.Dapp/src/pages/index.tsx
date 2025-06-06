@@ -7,7 +7,7 @@ import {
   useSuiClientQueries,
   useSuiClient,
 } from "@mysten/dapp-kit";
-import { Transaction } from "@mysten/sui/transactions";
+import { coinWithBalance, Transaction } from "@mysten/sui/transactions";
 
 interface Food {
   id: string;
@@ -240,6 +240,7 @@ const HomePage: React.FC = () => {
 
       const gasCoin = coins.data[0];
       const tx = new Transaction();
+
       tx.moveCall({
         target: `${PACKAGE_ID}::mechanics::feed_pet`,
         arguments: [
@@ -357,58 +358,67 @@ const HomePage: React.FC = () => {
         return;
       }
       const mintPrice = BigInt((config?.data?.content as any).fields.pet_price);
-      const estimatedGasFee = BigInt(100_000_000);
-      let coins = await client.getCoins({
-        owner: currentAccount.address,
-        coinType: "0x2::sui::SUI",
+
+      const mintCoinObject = coinWithBalance({
+        balance: mintPrice,
+        useGasCoin: true
       });
 
-      if (coins.data.length < 2) {
-        const largestCoin = coins.data.reduce((maxCoin: any, coin: any) => {
-          const coinBalance = BigInt(coin.balance);
-          return coinBalance > BigInt(maxCoin.balance) ? coin : maxCoin;
-        }, coins.data[0]);
+      // const estimatedGasFee = BigInt(100_000_000);
+      // let coins = await client.getCoins({
+      //   owner: currentAccount.address,
+      //   coinType: "0x2::sui::SUI",
+      // });
 
-        if (BigInt(largestCoin.balance) < mintPrice + estimatedGasFee) {
-          alert("Insufficient SUI balance to split and pay!");
-          return;
-        }
+      // if (coins.data.length < 2) {
+      //   const largestCoin = coins.data.reduce((maxCoin: any, coin: any) => {
+      //     const coinBalance = BigInt(coin.balance);
+      //     return coinBalance > BigInt(maxCoin.balance) ? coin : maxCoin;
+      //   }, coins.data[0]);
 
-        const txSplit = new Transaction();
-        const [coin1, coin2] = txSplit.splitCoins(
-          txSplit.object(largestCoin.coinObjectId),
-          [txSplit.pure.u64(mintPrice), txSplit.pure.u64(BigInt(largestCoin.balance) - mintPrice)]
-        );
-        txSplit.transferObjects([coin1, coin2], currentAccount.address);
+      //   if (BigInt(largestCoin.balance) < mintPrice + estimatedGasFee) {
+      //     alert("Insufficient SUI balance to split and pay!");
+      //     return;
+      //   }
 
-        signAndExecute(
-          { transaction: txSplit },
-          {
-            onSuccess: () => console.log("Coin split successfully!"),
-            onError: (error) => alert(`Split Error: ${error.message}`),
-          }
-        );
+      //   const txSplit = new Transaction();
+      //   const [coin1, coin2] = txSplit.splitCoins(
+      //     txSplit.object(largestCoin.coinObjectId),
+      //     [txSplit.pure.u64(mintPrice), txSplit.pure.u64(BigInt(largestCoin.balance) - mintPrice)]
+      //   );
+      //   txSplit.transferObjects([coin1, coin2], currentAccount.address);
 
-        coins = await client.getCoins({
-          owner: currentAccount.address,
-          coinType: "0x2::sui::SUI",
-        });
-      }
+      //   signAndExecute(
+      //     { transaction: txSplit },
+      //     {
+      //       onSuccess: () => console.log("Coin split successfully!"),
+      //       onError: (error) => alert(`Split Error: ${error.message}`),
+      //     }
+      //   );
 
-      const paymentCoin = coins.data.find((coin: any) => BigInt(coin.balance) >= mintPrice + estimatedGasFee);
-      if (!paymentCoin) {
-        alert(`Insufficient SUI balance! Need at least ${(Number(mintPrice) / 1_000_000_000 + 0.1)} SUI in a single coin.`);
-        return;
-      }
+      //   coins = await client.getCoins({
+      //     owner: currentAccount.address,
+      //     coinType: "0x2::sui::SUI",
+      //   });
+      // }
+
+      // const paymentCoin = coins.data.find((coin: any) => BigInt(coin.balance) >= mintPrice + estimatedGasFee);
+      // if (!paymentCoin) {
+      //   alert(`Insufficient SUI balance! Need at least ${(Number(mintPrice) / 1_000_000_000 + 0.1)} SUI in a single coin.`);
+      //   return;
+      // }
 
       const tx = new Transaction();
-      const splitCoin = tx.splitCoins(tx.object(paymentCoin.coinObjectId), [tx.pure.u64(mintPrice)]);
+      tx.setSender(currentAccount.address);
+      // const splitCoin = tx.splitCoins(tx.object(paymentCoin.coinObjectId), [tx.pure.u64(mintPrice)]);
       tx.moveCall({
-        target: `${PACKAGE_ID}::mechanics::mint_pet`,
+        target: `${PACKAGE_ID}::mechanics::create_pet`,
         arguments: [
           tx.object(CONFIG_ID),
           tx.object(TREASURY_ID),
-          splitCoin,
+          tx.object(RANDOM_ID),
+          tx.object(CLOCK_ID),
+          mintCoinObject,
         ],
       });
 
@@ -435,64 +445,70 @@ const HomePage: React.FC = () => {
     setIsBuying(true);
     try {
       const foodPrice = BigInt(Math.floor(food.food_price * 1_000_000_000));
-      const estimatedGasFee = BigInt(100_000_000);
-      let coins = await client.getCoins({
-        owner: currentAccount.address,
-        coinType: "0x2::sui::SUI",
+
+      const foodCoinObject = coinWithBalance({
+        balance: foodPrice,
+        useGasCoin: true
       });
+      // const estimatedGasFee = BigInt(100_000_000);
+      // let coins = await client.getCoins({
+      //   owner: currentAccount.address,
+      //   coinType: "0x2::sui::SUI",
+      // });
 
-      if (coins.data.length < 2) {
-        const largestCoin = coins.data.reduce((maxCoin: any, coin: any) => {
-          const coinBalance = BigInt(coin.balance);
-          return coinBalance > BigInt(maxCoin.balance) ? coin : maxCoin;
-        }, coins.data[0]);
+      // if (coins.data.length < 2) {
+      //   const largestCoin = coins.data.reduce((maxCoin: any, coin: any) => {
+      //     const coinBalance = BigInt(coin.balance);
+      //     return coinBalance > BigInt(maxCoin.balance) ? coin : maxCoin;
+      //   }, coins.data[0]);
 
-        if (BigInt(largestCoin.balance) < foodPrice + estimatedGasFee) {
-          alert("Insufficient SUI balance to split and pay!");
-          return;
-        }
+      //   if (BigInt(largestCoin.balance) < foodPrice + estimatedGasFee) {
+      //     alert("Insufficient SUI balance to split and pay!");
+      //     return;
+      //   }
 
-        const txSplit = new Transaction();
-        const [coin1, coin2] = txSplit.splitCoins(
-          txSplit.object(largestCoin.coinObjectId),
-          [txSplit.pure.u64(foodPrice), txSplit.pure.u64(BigInt(largestCoin.balance) - foodPrice)]
-        );
-        txSplit.transferObjects([coin1, coin2], currentAccount.address);
+      //   const txSplit = new Transaction();
+      //   const [coin1, coin2] = txSplit.splitCoins(
+      //     txSplit.object(largestCoin.coinObjectId),
+      //     [txSplit.pure.u64(foodPrice), txSplit.pure.u64(BigInt(largestCoin.balance) - foodPrice)]
+      //   );
+      //   txSplit.transferObjects([coin1, coin2], currentAccount.address);
 
-        signAndExecute(
-          { transaction: txSplit },
-          {
-            onSuccess: () => console.log("Coin split successfully!"),
-            onError: (error) => alert(`Split Error: ${error.message}`),
-          }
-        );
-        coins = await client.getCoins({
-          owner: currentAccount.address,
-          coinType: "0x2::sui::SUI",
-        });
-      }
+      //   signAndExecute(
+      //     { transaction: txSplit },
+      //     {
+      //       onSuccess: () => console.log("Coin split successfully!"),
+      //       onError: (error) => alert(`Split Error: ${error.message}`),
+      //     }
+      //   );
+      //   coins = await client.getCoins({
+      //     owner: currentAccount.address,
+      //     coinType: "0x2::sui::SUI",
+      //   });
+      // }
 
-      const paymentCoin = coins.data.find((coin: any) => BigInt(coin.balance) >= foodPrice);
-      const gasCoin = coins.data.find(
-        (coin: any) => BigInt(coin.balance) >= estimatedGasFee && coin.coinObjectId !== paymentCoin?.coinObjectId
-      );
-      if (!paymentCoin || !gasCoin) {
-        alert(`Insufficient SUI balance! Need at least ${(Number(foodPrice) / 1_000_000_000 + 0.1)} SUI in separate coins.`);
-        return;
-      }
+      // const paymentCoin = coins.data.find((coin: any) => BigInt(coin.balance) >= foodPrice);
+      // const gasCoin = coins.data.find(
+      //   (coin: any) => BigInt(coin.balance) >= estimatedGasFee && coin.coinObjectId !== paymentCoin?.coinObjectId
+      // );
+      // if (!paymentCoin || !gasCoin) {
+      //   alert(`Insufficient SUI balance! Need at least ${(Number(foodPrice) / 1_000_000_000 + 0.1)} SUI in separate coins.`);
+      //   return;
+      // }
 
       const tx = new Transaction();
-      const splitCoin = tx.splitCoins(tx.object(paymentCoin.coinObjectId), [tx.pure.u64(foodPrice)]);
+      tx.setSender(currentAccount.address);
+      // const splitCoin = tx.splitCoins(tx.object(foodCoinObject), [tx.pure.u64(foodPrice)]);
       tx.moveCall({
         target: `${PACKAGE_ID}::mechanics::buy_food`,
         arguments: [
           tx.object(CONFIG_ID),
           tx.object(TREASURY_ID),
           tx.pure.u64(food.food_config_id),
-          splitCoin,
+          foodCoinObject,
         ],
       });
-      tx.setGasPayment([{ objectId: gasCoin.coinObjectId, version: gasCoin.version, digest: gasCoin.digest }]);
+      // tx.setGasPayment([{ objectId: gasCoin.coinObjectId, version: gasCoin.version, digest: gasCoin.digest }]);
 
       signAndExecute(
         { transaction: tx },
@@ -536,67 +552,74 @@ const HomePage: React.FC = () => {
       }
       const petLevel = Number((petData?.data?.content as any).fields.pet_level);
       const cost = petUpgradeBasePrice + (petUpgradeBasePrice / BigInt(10) * BigInt(petLevel + 1));
-      const estimatedGasFee = BigInt(100_000_000);
-      let coins = await client.getCoins({
-        owner: currentAccount.address,
-        coinType: "0x2::sui::SUI",
+
+      const upgradeCoinObject = coinWithBalance({
+        balance: cost,
+        useGasCoin: true
       });
 
-      if (coins.data.length < 2) {
-        const largestCoin = coins.data.reduce((maxCoin: any, coin: any) => {
-          const coinBalance = BigInt(coin.balance);
-          return coinBalance > BigInt(maxCoin.balance) ? coin : maxCoin;
-        }, coins.data[0]);
+      // const estimatedGasFee = BigInt(100_000_000);
+      // let coins = await client.getCoins({
+      //   owner: currentAccount.address,
+      //   coinType: "0x2::sui::SUI",
+      // });
 
-        if (BigInt(largestCoin.balance) < cost + estimatedGasFee) {
-          alert("Insufficient SUI balance to split and pay!");
-          return;
-        }
+      // if (coins.data.length < 2) {
+      //   const largestCoin = coins.data.reduce((maxCoin: any, coin: any) => {
+      //     const coinBalance = BigInt(coin.balance);
+      //     return coinBalance > BigInt(maxCoin.balance) ? coin : maxCoin;
+      //   }, coins.data[0]);
 
-        const txSplit = new Transaction();
-        const [coin1, coin2] = txSplit.splitCoins(
-          txSplit.object(largestCoin.coinObjectId),
-          [txSplit.pure.u64(cost), txSplit.pure.u64(BigInt(largestCoin.balance) - cost)]
-        );
-        txSplit.transferObjects([coin1, coin2], currentAccount.address);
+      //   if (BigInt(largestCoin.balance) < cost + estimatedGasFee) {
+      //     alert("Insufficient SUI balance to split and pay!");
+      //     return;
+      //   }
 
-        signAndExecute(
-          { transaction: txSplit },
-          {
-            onSuccess: () => console.log("Coin split successfully!"),
-            onError: (error) => alert(`Split Error: ${error.message}`),
-          }
-        );
+      //   const txSplit = new Transaction();
+      //   const [coin1, coin2] = txSplit.splitCoins(
+      //     txSplit.object(largestCoin.coinObjectId),
+      //     [txSplit.pure.u64(cost), txSplit.pure.u64(BigInt(largestCoin.balance) - cost)]
+      //   );
+      //   txSplit.transferObjects([coin1, coin2], currentAccount.address);
 
-        coins = await client.getCoins({
-          owner: currentAccount.address,
-          coinType: "0x2::sui::SUI",
-        });
-      }
+      //   signAndExecute(
+      //     { transaction: txSplit },
+      //     {
+      //       onSuccess: () => console.log("Coin split successfully!"),
+      //       onError: (error) => alert(`Split Error: ${error.message}`),
+      //     }
+      //   );
 
-      const paymentCoin = coins.data.find((coin: any) => BigInt(coin.balance) >= cost);
-      const gasCoin = coins.data.find(
-        (coin: any) => BigInt(coin.balance) >= estimatedGasFee && coin.coinObjectId !== paymentCoin?.coinObjectId
-      );
-      if (!paymentCoin || !gasCoin) {
-        alert(`Insufficient SUI balance! Need at least ${(Number(cost) / 1_000_000_000 + 0.1)} SUI in separate coins.`);
-        return;
-      }
+      //   coins = await client.getCoins({
+      //     owner: currentAccount.address,
+      //     coinType: "0x2::sui::SUI",
+      //   });
+      // }
+
+      // const paymentCoin = coins.data.find((coin: any) => BigInt(coin.balance) >= cost);
+      // const gasCoin = coins.data.find(
+      //   (coin: any) => BigInt(coin.balance) >= estimatedGasFee && coin.coinObjectId !== paymentCoin?.coinObjectId
+      // );
+      // if (!paymentCoin || !gasCoin) {
+      //   alert(`Insufficient SUI balance! Need at least ${(Number(cost) / 1_000_000_000 + 0.1)} SUI in separate coins.`);
+      //   return;
+      // }
 
       const tx = new Transaction();
-      const splitCoin = tx.splitCoins(tx.object(paymentCoin.coinObjectId), [tx.pure.u64(cost)]);
+      tx.setSender(currentAccount.address);
+      // const splitCoin = tx.splitCoins(tx.object(paymentCoin.coinObjectId), [tx.pure.u64(cost)]);
       tx.moveCall({
         target: `${PACKAGE_ID}::mechanics::upgrade_pet`,
         arguments: [
           tx.object(petId),
           tx.object(CONFIG_ID),
           tx.object(TREASURY_ID),
-          splitCoin,
+          upgradeCoinObject,
         ],
       });
-      tx.setGasPayment([{ objectId: gasCoin.coinObjectId, version: gasCoin.version, digest: gasCoin.digest }]);
+      // tx.setGasPayment([{ objectId: gasCoin.coinObjectId, version: gasCoin.version, digest: gasCoin.digest }]);
 
-      await signAndExecute(
+      signAndExecute(
         { transaction: tx },
         {
           onSuccess: () => {
